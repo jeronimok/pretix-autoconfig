@@ -1,0 +1,61 @@
+{% extends "pretixpresale/event/base.html" %}
+{% load i18n static eventurl autoconfig_fees %}
+{% block title %}
+    {% for s in checkout_flow %}{% if request.resolver_match.kwargs.step == s.identifier %}
+        {% blocktrans trimmed with label=s.label current=forloop.counter total=checkout_flow|length %}Step {{ current }} of {{ total }}: {{ label }}{% endblocktrans %} –
+    {% endif %}{% endfor %}
+    {% trans "Checkout" %}
+{% endblock %}
+{% block custom_header %}
+    {{ block.super }}
+{% endblock %}
+{% block content %}
+<div class="autoconfig-checkout{% if request.resolver_match.kwargs.step == "questions" or request.resolver_match.kwargs.step == "confirm" %} autoconfig-checkout--questions{% endif %}">
+    {% if request.resolver_match.kwargs.step == "questions" or request.resolver_match.kwargs.step == "confirm" %}
+        <div class="autoconfig-checkout-topbar">
+            {% if has_prev %}
+                <a class="autoconfig-top-back" href="{{ prev_url }}">‹ {% trans "Back" %}</a>
+            {% else %}
+                <a class="autoconfig-top-back" href="{% shop_return_url %}">‹ {% trans "Back" %}</a>
+            {% endif %}
+            {% for s in checkout_flow %}
+                {% if request.resolver_match.kwargs.step == s.identifier %}
+                    <p class="autoconfig-step-header"><strong>{{ s.label }}</strong></p>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% comment %}
+        Neither the "questions" nor "confirm" step includes fragment_cart.html (they each
+        render their own compact summary instead), so neither gets fragment_cart.html's
+        #cart-extend-form — the form "Renew reservation" in the global expiry dialog
+        (fragment_modals.html, present on every page) submits via
+        $("#cart-extend-form").submit(). Without it that click silently does nothing: the
+        dialog closes, the reservation is never extended.
+        It cannot live inside either step's own template: both wrap their whole page in one
+        big <form> for the real submission, and HTML forbids nested forms — a browser
+        silently drops a nested <form> start tag, which is worse than just not working,
+        since the literal </form> then closes the OUTER form early instead. Here, as a
+        sibling of {% templatetag openblock %} block inner {% templatetag closeblock %}
+        rather than inside it, it is never nested in anything.
+        {% endcomment %}
+        <form id="cart-extend-form" class="sr-only" data-asynctask data-asynctask-no-redirect
+              method="post" action="{% eventurl request.event "presale:event.cart.extend" cart_namespace=cart_namespace|default_if_none:"" %}">
+            {% csrf_token %}
+        </form>
+    {% else %}
+        {% for s in checkout_flow %}
+            {% if request.resolver_match.kwargs.step == s.identifier %}
+            <p class="autoconfig-step-header">
+                <strong>{{ s.label }}</strong><span class="autoconfig-step-num">{{ forloop.counter }}&thinsp;/&thinsp;{{ checkout_flow|length }}</span>
+            </p>
+            {% endif %}
+        {% endfor %}
+        {% if request.resolver_match.kwargs.step != "confirm" %}
+            <div class="autoconfig-card autoconfig-checkout-cart-card">
+                {% include "pretixpresale/event/fragment_cart.html" with cart=cart event=request.event editable=False %}
+            </div>
+        {% endif %}
+    {% endif %}
+    {% block inner %}{% endblock %}
+</div>
+{% endblock %}

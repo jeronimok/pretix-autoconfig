@@ -1,0 +1,5 @@
+[plugin]
+package = "pretix-autoconfig"
+modules = [ "pretix_autoconfig" ]
+marketplace_name = "pretix-autoconfig"
+

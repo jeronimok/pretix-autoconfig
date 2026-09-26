@@ -1,0 +1,133 @@
+{% load i18n %}
+{% load eventurl %}
+{% load safelink %}
+{% load rich_text %}
+{% load money %}
+{% load static %}
+{% load autoconfig_fees %}
+<div class="panel {% if cart.positions or cart.current_selected_payments %}{% if open %}panel-primary{% else %}panel-default{% endif %}{% else %}panel-default{% endif %} cart{% if not cart.positions and not cart.current_selected_payments %} cart--empty{% endif %}" data-autoconfig-fee-percent="{% autoconfig_effective_fee_percent event %}" data-autoconfig-fee-min="{% autoconfig_effective_fee_min event %}">
+    <div class="panel-heading" aria-describedby="cart-deadline">
+        <h2 class="panel-title">
+            <span class="autoconfig-cart-header">
+                <span class="autoconfig-event-calendar" aria-hidden="true">
+                    <span class="autoconfig-event-calendar__month">{{ request.event.date_from|date:"M" }}</span>
+                    <span class="autoconfig-event-calendar__day">{{ request.event.date_from|date:"j" }}</span>
+                </span>
+                <span class="autoconfig-cart-header__meta">
+                    <strong class="autoconfig-cart-header__name">{{ request.event.name }}</strong>
+                    <span class="autoconfig-cart-header__date">
+                        {% if request.event.settings.show_times %}
+                            {{ request.event.get_date_range_display_with_times_as_html }}
+                        {% else %}
+                            {{ request.event.get_date_range_display }}
+                        {% endif %}
+                    </span>
+                </span>
+            </span>
+            {% if cart.positions %}
+                <strong id="cart-deadline-short" data-expires="{{ cart.first_expiry|date:"Y-m-d H:i:sO" }}" aria-hidden="true">
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {{ cart.minutes_left|stringformat:"02d" }}:{{ cart.seconds_left|stringformat:"02d" }}
+                    {% else %}
+                        {% trans "Cart expired" %}
+                    {% endif %}
+                </strong>
+            {% endif %}
+        </h2>
+    </div>
+    <div>
+        <div class="panel-body">
+            {% if cart.positions %}
+                {% include "pretixpresale/event/fragment_cart.html" with cart=cart event=request.event editable=True %}
+            {% endif %}
+            {% if cart.current_selected_payments %}
+                <p>{% trans "You already selected the following payment methods:" %}</p>
+                <div class="list-group">
+                    {% for p in cart.current_selected_payments %}
+                        <div class="list-group-item">
+                            <div class="row">
+                                <div class="col-xs-9">
+                                    {{ p.provider_name }}
+                                </div>
+                                <div class="col-xs-3 text-right">
+                                    {% if p.payment_amount %}
+                                        {{ p.payment_amount|money:request.event.currency }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="checkout-button-row checkout-button-row--secondary-only">
+                <div class="checkout-button-secondary">
+                    <form method="post" data-asynctask action="{% eventurl request.event "presale:event.cart.clear" cart_namespace=cart_namespace %}">
+                        {% csrf_token %}
+                        <p><button class="btn btn-default" type="submit">
+                            <i class="fa fa-close" aria-hidden="true"></i> {% trans "Empty cart" %}</button></p>
+                    </form>
+                {% comment %}
+                Keep the voucher input available even when every line already carries a
+                voucher, IF that voucher does not change the price (price_mode "none",
+                e.g. a sold-out-bypass private link) — the buyer may still have a real
+                code to redeem.
+                {% endcomment %}
+                {% with cart_box_voucher=cart.positions.0.voucher %}
+                {% if vouchers_exist and not hide_voucher_input %}
+                {% if not cart.all_with_voucher or cart_box_voucher.price_mode == 'none' %}
+                    <div class="toggle-container">
+                        <p class="toggle-summary"><button class="js-only toggle toggle-remove btn btn-default" aria-expanded="false">
+                            <span class="fa fa-tag" aria-hidden="true"></span> {% trans "Redeem a voucher" %}
+                        </button></p>
+                        <form action="{% eventurl event "presale:event.cart.voucher" cart_namespace=cart_namespace|default_if_none:"" %}"
+                              data-asynctask-headline="{% trans "We're applying this voucher to your cart..." %}"
+                              method="post" data-asynctask>
+                            {% csrf_token %}
+                            <label for="voucher_code" class="sr-only">{% trans "Voucher code" %}</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="voucher" id="voucher_code" placeholder="{% trans "Voucher code" %}" aria-label="{% trans "Voucher code" %}">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" type="submit">
+                                        <span class="fa fa-arrow-right" aria-hidden="true"></span><span class="sr-only"> {% trans "Redeem voucher" %}</span>
+                                    </button>
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+                {% endif %}
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% if cart.positions %}
+<div class="autoconfig-card autoconfig-cart-summary-card">
+    <div class="autoconfig-cart-summary-main">
+        <div class="autoconfig-cart-summary-amount">
+            <span class="autoconfig-cart-summary-label">{% trans "Total" %}</span>
+            <strong>{{ cart.total|money:request.event.currency }}</strong>
+        </div>
+        <form class="checkout-button-primary" method="get" action="{% eventurl request.event "presale:event.checkout.start" cart_namespace=cart_namespace  %}">
+            <button class="autoconfig-pill-btn" type="submit"{% if has_addon_choices or cart.total == 0 %} aria-label="{% trans "Continue with order process" %}"{% endif %}>
+                {% if has_addon_choices or cart.total == 0 %}
+                    {% trans "Continue" %}
+                {% else %}
+                    {% trans "Proceed with checkout" %}
+                {% endif %} ›
+            </button>
+        </form>
+    </div>
+    <div class="autoconfig-cart-summary-footer">
+        {% if cart.minutes_left > 0 %}
+            {% blocktrans trimmed with minutes=cart.minutes_left %}
+                The items in your cart are reserved for you for {{ minutes }} minutes.
+            {% endblocktrans %}
+        {% else %}
+            {% trans "Cart expired" %}
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<script src="{% static "pretix_autoconfig/cart_fee_inline.js" %}"></script>

@@ -1,0 +1,243 @@
+{% extends "pretixpresale/event/checkout_base.html" %}
+{% load i18n bootstrap3 money eventurl eventsignal static autoconfig_fees %}
+{% block title %}{% trans "Review order" %}{% endblock %}
+{% block custom_header %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "pretix_autoconfig/checkout_payment.css" %}"/>
+    {% include "pretixpresale/event/fragment_walletdetection_head.html" %}
+{% endblock %}
+{% block inner %}
+    {# Order summary — display only, outside the submit form so the voucher card can sit between #}
+    <div class="autoconfig-card autoconfig-confirm-summary-card">
+        {% for group in cart.positions|grouped_positions %}
+            <div class="autoconfig-confirm-summary-row">
+                <div class="autoconfig-confirm-summary-row__product">
+                    <strong>{{ group.item.name }}{% if group.variation %} – {{ group.variation }}{% endif %}</strong>
+                </div>
+                <div class="autoconfig-confirm-summary-row__single">{{ group.unit_price|money:request.event.currency }}</div>
+                <div class="autoconfig-confirm-summary-row__count">{{ group.count }}</div>
+                <div class="autoconfig-confirm-summary-row__total"><strong>{{ group.total|money:request.event.currency }}</strong></div>
+            </div>
+        {% endfor %}
+        {% for fee in cart.fees %}
+            <div class="autoconfig-confirm-summary-row autoconfig-confirm-summary-row--fee">
+                <div class="autoconfig-confirm-summary-row__product">
+                    <strong>{% if fee.description %}{{ fee.description }}{% else %}{% trans "Service fee" %}{% endif %}</strong>
+                </div>
+                <div class="autoconfig-confirm-summary-row__total"><strong>{{ fee.value|money:request.event.currency }}</strong></div>
+            </div>
+        {% endfor %}
+        <div class="autoconfig-confirm-summary-row autoconfig-confirm-summary-row--total">
+            <div class="autoconfig-confirm-summary-row__product">
+                <strong>{% trans "Total" %}</strong>
+            </div>
+            <div class="autoconfig-confirm-summary-row__total"><strong>{{ cart.total|money:request.event.currency }}</strong></div>
+        </div>
+    </div>
+
+    {% comment %}
+    Voucher card — between summary and payment, its own form.
+    A voucher with price_mode "none" (e.g. a sold-out-bypass private link) is NOT a
+    discount: it must not render as "discount applied", and it must not take the place
+    of the promo-code input — the buyer may still have a real code to enter.
+    {% endcomment %}
+    {% event_vouchers_exist as vouchers_active %}
+    {% if vouchers_active %}
+    {% cart_discount_state cart as ds %}
+    {% with voucher=ds.voucher %}
+    <div class="autoconfig-card autoconfig-voucher-card">
+        <p class="h3">{% trans "Enter a promotional code" %}</p>
+        {% if ds.applied and ds.applied == ds.total %}
+            <p class="autoconfig-voucher-applied">
+                <span class="fa fa-tag" aria-hidden="true"></span>
+                {% if voucher|is_combo_voucher %}
+                    {# Synthesised private-link + code voucher — its CMB- code is per-checkout, never shown. #}
+                    {% if voucher.price_mode == 'percent' %}
+                        {% blocktrans trimmed with pct=voucher.value|floatformat:0 %}{{ pct }}% discount applied{% endblocktrans %}
+                    {% else %}
+                        {% trans "Discount applied" %}
+                    {% endif %}
+                {% elif voucher.price_mode == 'percent' %}
+                    {% blocktrans trimmed with pct=voucher.value|floatformat:0 code=voucher.code %}{{ pct }}% discount applied with code {{ code }}{% endblocktrans %}
+                {% else %}
+                    {% blocktrans trimmed with code=voucher.code %}Discount applied with code {{ code }}{% endblocktrans %}
+                {% endif %}
+            </p>
+        {% else %}
+            {% if ds.applied %}
+                {# Some tickets were added after the code was applied: say which part it covers, and let the buyer enter it again. #}
+                <p class="autoconfig-voucher-applied">
+                    <span class="fa fa-tag" aria-hidden="true"></span>
+                    {% if voucher.price_mode == 'percent' %}
+                        {% blocktrans trimmed with pct=voucher.value|floatformat:0 applied=ds.applied total=ds.total %}{{ pct }}% discount applied to {{ applied }} of {{ total }} tickets{% endblocktrans %}
+                    {% else %}
+                        {% blocktrans trimmed with applied=ds.applied total=ds.total %}Discount applied to {{ applied }} of {{ total }} tickets{% endblocktrans %}
+                    {% endif %}
+                </p>
+                <p class="autoconfig-voucher-hint">{% trans "Enter the code again to apply it to your other tickets." %}</p>
+            {% endif %}
+            {% referral_voucher_code as ref_voucher %}
+            {% referral_voucher_discount_pct as ref_pct %}
+            {% comment %}Only pre-fill when the session voucher is an actual discount — never echo a bypass code (price_mode "none") into the promo box.{% endcomment %}
+            <form action="{% eventurl event "presale:event.cart.voucher" cart_namespace=cart_namespace|default_if_none:"" %}"
+                  method="post" data-autoconfig-voucher-form>
+                {% csrf_token %}
+                <label for="promo-voucher-code-confirm" class="sr-only">{% trans "Promotional code" %}</label>
+                <div class="autoconfig-voucher-row">
+                    <input type="text" class="form-control autoconfig-voucher-input" name="voucher" id="promo-voucher-code-confirm"
+                           placeholder="{% trans "Promotional code" %}" value="{% if ref_pct != '0' %}{{ ref_voucher }}{% endif %}"
+                           aria-label="{% trans "Promotional code" %}">
+                    <button class="btn {% if ref_pct != '0' %}btn-primary{% else %}btn-default{% endif %} autoconfig-voucher-btn" type="submit">
+                        {% if ref_pct != '0' %}{% trans "Click to apply!" %}{% else %}{% trans "Apply" %}{% endif %}
+                    </button>
+                </div>
+                {% if ref_pct != '0' %}
+                    <p class="autoconfig-voucher-hint">
+                        <span class="fa fa-tag" aria-hidden="true"></span>
+                        {% trans "Referral discount code pre-filled — click Apply to activate." %}
+                    </p>
+                {% endif %}
+            </form>
+            <script src="{% static "pretix_autoconfig/confirm_voucher_apply.js" %}"></script>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endif %}{# vouchers_active #}
+
+    <form method="post" data-asynctask
+          data-asynctask-headline="{% trans "Please hang tight, we're finalizing your order!" %}"
+          data-autoconfig-confirm-form>
+        {% csrf_token %}
+
+        {# Inline payment selector #}
+        <div class="autoconfig-card">
+            <h3 class="h4 autoconfig-payment-checkout__heading">{% trans "Payment method" %}</h3>
+            <div class="panel-group" id="payment_accordion">
+            {% for p in providers %}
+                <fieldset class="panel panel-default accordion-panel autoconfig-payment-card" data-provider="{{ p.provider.identifier }}">
+                    <legend class="accordion-radio">
+                        <label class="panel-heading autoconfig-payment-card__header">
+                            <span class="panel-title autoconfig-payment-card__title">
+                                {% if show_fees %}
+                                    <strong class="pull-right flip autoconfig-payment-card__fee">
+                                        {% if p.fee < 0 %}-{% else %}+{% endif %} {{ p.fee|money:event.currency|cut:"-" }}
+                                    </strong>
+                                {% endif %}
+                                <input type="radio" name="payment" value="{{ p.provider.identifier }}"
+                                       title="{{ p.provider.public_name }}"
+                                       required
+                                       {% if selected == p.provider.identifier or not selected and p.provider.identifier == "stripe_ideal" %}checked="checked"{% endif %}
+                                       aria-controls="payment_{{ p.provider.identifier }}"
+                                       data-wallets="{{ p.provider.walletqueries|join:"|" }}" />
+                                <span class="autoconfig-payment-card__icon" aria-hidden="true"></span>
+                                <strong class="accordion-label-text">{{ p.provider.public_name }}</strong>
+                            </span>
+                        </label>
+                    </legend>
+                    <div id="payment_{{ p.provider.identifier }}" class="panel-body form-horizontal autoconfig-payment-card__body">
+                        {% if request.event.testmode %}
+                            {% if p.provider.test_mode_message %}
+                                <div class="alert alert-info"><p>{{ p.provider.test_mode_message }}</p></div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <p>{% trans "This payment provider does not provide support for test mode." %}
+                                    <strong>{% trans "If you continue, actual money might be transferred." %}</strong></p>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        {{ p.form }}
+                    </div>
+                </fieldset>
+            {% endfor %}
+            {% if not providers %}
+                <p><em>{% trans "There are no payment providers enabled." %}</em></p>
+            {% endif %}
+            </div>
+        </div>
+        {% eventsignal event "pretix.presale.signals.checkout_confirm_page_content" request=request %}
+
+        {# Contact / invoice info #}
+        <div class="autoconfig-card">
+            {% for l, v in contact_info %}
+                {% if v is False %}{# skip #}
+                {% elif v is True %}
+                    <div class="checkbox"><label><input type="checkbox" checked disabled> {{ l }}</label></div>
+                {% else %}
+                    <p class="autoconfig-confirm-contact-line"><strong>{{ l }}:</strong> <span>{{ v }}</span></p>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {# Confirm messages (mandatory T&C) + optional marketing opt-in #}
+        {% if confirm_messages or 1 %}
+        <div class="autoconfig-card">
+            {% for key, desc in confirm_messages.items %}
+                <div class="checkbox" style="margin-bottom:.5rem">
+                    <label for="input_confirm_{{ key }}">
+                        <input type="checkbox" value="yes" name="confirm_{{ key }}" id="input_confirm_{{ key }}" required>
+                        {{ desc|safe }}
+                    </label>
+                </div>
+            {% endfor %}
+
+        </div>
+        {% endif %}
+
+        {% if require_approval %}
+        <div class="alert alert-warning">
+            <strong>{% trans "After you submitted your order using the button below, it will require approval by the event organizer before it can be confirmed and forms a valid contract." %}</strong>
+        </div>
+        {% endif %}
+
+        {# Action: submit #}
+        <div class="autoconfig-card autoconfig-questions-total-card">
+            <div class="autoconfig-questions-total-main">
+                <div class="autoconfig-questions-total-amount">
+                    <span class="autoconfig-questions-total-label">{% trans "Total" %} (Incl. taxes)</span>
+                    <strong>{{ cart.total|money:request.event.currency }}</strong>
+                </div>
+                <button class="autoconfig-pill-btn" type="submit">
+                    {% trans "Pay" %} ›
+                </button>
+                <script src="{% static "pretix_autoconfig/confirm_required_gate.js" %}"></script>
+            </div>
+            <div class="autoconfig-questions-total-footer">
+                {# Visually hidden — the data source cart.js reads on init; kept meaningful for screen readers. #}
+                <span id="cart-deadline"
+                      class="sr-only"
+                      data-expires="{{ cart.first_expiry|date:"Y-m-d H:i:sO" }}"
+                      data-max-expiry-extend="{{ cart.max_expiry_extend|date:"Y-m-d H:i:sO" }}">
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {% blocktrans trimmed with minutes=cart.minutes_left %}The items in your cart are reserved for you for {{ minutes }} minutes.{% endblocktrans %}
+                    {% else %}
+                        {% trans "Cart expired." %}
+                    {% endif %}
+                </span>
+                <p>
+                    {% comment %}
+                        A page loaded after the reservation already lapsed now renders
+                        "Cart expired." inside #cart-deadline-short, consistent with the "if"
+                        branch, instead of as bare text with no element for cart.js to find.
+                        This page has no equivalent of live_cart.js's syncDeadlinePrefix, so
+                        the "Reserved for" glue-text bug (fixed on the shop index page) can
+                        still happen here if the countdown reaches zero while this exact page
+                        stays open — a narrower, unreported case left as a follow-up.
+                    {% endcomment %}
+                    {% trans "Reserved for" as cart_deadline_prefix %}
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {{ cart_deadline_prefix }} <strong id="cart-deadline-short" aria-hidden="true">{{ cart.minutes_left|stringformat:"02d" }}:{{ cart.seconds_left|stringformat:"02d" }}</strong>
+                    {% else %}
+                        <strong id="cart-deadline-short" aria-hidden="true">{% trans "Cart expired." %}</strong>
+                    {% endif %}
+                </p>
+                {% comment %}
+                The form that powers "Renew reservation" (fragment_modals.html's dialog
+                submits $("#cart-extend-form")) lives in checkout_base.html, not here — this
+                whole page is one big <form>, and HTML forbids nesting a second <form>
+                inside it. See checkout_base.html for the actual fix and why it must sit
+                outside {% templatetag openblock %} block inner {% templatetag closeblock %}.
+                {% endcomment %}
+            </div>
+        </div>
+    </form>
+{% endblock %}

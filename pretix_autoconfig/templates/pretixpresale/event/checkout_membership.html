@@ -1,0 +1,47 @@
+{% extends "pretixpresale/event/checkout_base.html" %}
+{% load i18n bootstrap3 rich_text %}
+{% block inner %}
+    <div class="autoconfig-card">
+        <p>{% trans "Some products in your cart can only be purchased with an active membership on your account." %}</p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        {% for form in forms %}
+            <div class="autoconfig-card">
+                <p class="autoconfig-item-label">
+                    <strong>{{ form.position.item.name }}{% if form.position.variation %} – {{ form.position.variation }}{% endif %}</strong>
+                </p>
+                {% if form.position.seat %}
+                    <p><strong>{% trans "Seat" %}:</strong> {{ form.position.seat }}</p>
+                {% endif %}
+                {% if form.position.addons.all %}
+                    <p><strong>{% trans "Selected add-ons" %}:</strong></p>
+                    <ul class="addon-list">
+                        {% for a in form.position.addons.all %}
+                            <li>{{ a.item.name }}{% if a.variation %} – {{ a.variation.value }}{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if form.position.subevent %}
+                    <p><strong>{% trans "Date" context "subevent" %}:</strong> {{ form.position.subevent.name }} &middot; {{ form.position.subevent.get_date_range_display_with_times_as_html }}</p>
+                {% endif %}
+                {% if form.is_empty %}
+                    <div class="alert alert-danger">
+                        {% trans "This product requires a customer account with a valid membership or authorization for this product type." %}
+                    </div>
+                    <div class="sr-only">
+                        {% bootstrap_form form layout="checkout" %}
+                    </div>
+                {% else %}
+                    {% bootstrap_form form layout="checkout" %}
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="autoconfig-action-card">
+            <button class="autoconfig-pill-btn" type="submit">{% trans "Continue" %} ›</button>
+        </div>
+    </form>
+    {% if has_prev %}
+        <a class="autoconfig-back" href="{{ prev_url }}">← {% trans "Go back" %}</a>
+    {% endif %}
+{% endblock %}

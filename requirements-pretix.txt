@@ -1,0 +1,3 @@
+# Derived from PRETIX_VERSION at the deployment repository root.
+# Keep in sync manually when upgrading Pretix.
+pretix==2026.4.1

@@ -1,0 +1,79 @@
+{% extends "pretixpresale/event/checkout_base.html" %}
+{% load i18n bootstrap3 money static %}
+{% block inner %}
+    <form method="post" enctype="multipart/form-data" class="autoconfig-questions-form">
+        {% csrf_token %}
+
+        <div class="autoconfig-card" data-autoconfig-position-source>
+            {% if contact_form.errors or invoice_form.errors %}
+                <div class="alert alert-danger">{% trans "Please correct the errors below." %}</div>
+            {% endif %}
+            {% if contact_form.first_name and contact_form.last_name %}
+                <div class="row">
+                    <div class="col-xs-6">{% bootstrap_field contact_form.first_name layout="vertical" %}</div>
+                    <div class="col-xs-6">{% bootstrap_field contact_form.last_name layout="vertical" %}</div>
+                </div>
+                {% for field in contact_form %}
+                    {% if field.name != "first_name" and field.name != "last_name" %}
+                        {% bootstrap_field field layout="vertical" %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                {% bootstrap_form contact_form layout="vertical" %}
+            {% endif %}
+            {% if not invoice_address_asked and event.settings.invoice_name_required %}
+                {% bootstrap_form invoice_form layout="vertical" %}
+            {% endif %}
+            {% for pos, forms in formgroups %}
+                {% if forloop.first %}
+                    {% for form in forms %}
+                        {% bootstrap_form form layout="vertical" %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% for pos, forms in formgroups %}
+            {% if not forloop.first %}
+                <div data-autoconfig-position-mirror aria-hidden="true">
+                    {% for form in forms %}
+                        {% bootstrap_form form layout="vertical" %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <script src="{% static "pretix_autoconfig/checkout_questions_mirror.js" %}"></script>
+
+        <div class="autoconfig-card autoconfig-questions-total-card">
+            <div class="autoconfig-questions-total-main">
+                <div class="autoconfig-questions-total-amount">
+                    <span class="autoconfig-questions-total-label">{% trans "Total" %} (Incl. taxes)</span>
+                    <strong>{{ cart.total|money:request.event.currency }}</strong>
+                </div>
+                <button class="autoconfig-pill-btn" type="submit">{% trans "Continue" %} ›</button>
+            </div>
+            <div class="autoconfig-questions-total-footer">
+                {# Visually hidden — the data source cart.js reads on init; kept meaningful for screen readers. #}
+                <span id="cart-deadline"
+                      class="sr-only"
+                      data-expires="{{ cart.first_expiry|date:"Y-m-d H:i:sO" }}"
+                      data-max-expiry-extend="{{ cart.max_expiry_extend|date:"Y-m-d H:i:sO" }}">
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {% blocktrans trimmed with minutes=cart.minutes_left %}The items in your cart are reserved for you for {{ minutes }} minutes.{% endblocktrans %}
+                    {% else %}
+                        {% trans "Cart expired." %}
+                    {% endif %}
+                </span>
+                <p>
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {% trans "Reserved for" as cart_deadline_prefix %}
+                        {{ cart_deadline_prefix }} <strong id="cart-deadline-short" aria-hidden="true">{{ cart.minutes_left|stringformat:"02d" }}:{{ cart.seconds_left|stringformat:"02d" }}</strong>
+                    {% else %}
+                        {% trans "Cart expired." %}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </form>
+{% endblock %}

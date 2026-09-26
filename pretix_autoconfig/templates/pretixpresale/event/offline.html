@@ -1,0 +1,56 @@
+{% load i18n static compress %}
+<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:"en" }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% trans "Shop offline" %} — {{ request.event.name }}</title>
+    {% compress css file presale %}
+        <link rel="stylesheet" type="text/x-scss" href="{% static "pretixpresale/scss/main.scss" %}"/>
+    {% endcompress %}
+    {% if css_theme %}
+        <link rel="stylesheet" type="text/css" href="{{ css_theme }}" />
+    {% endif %}
+    <link rel="stylesheet" type="text/css" href="{% static "pretix_autoconfig/shop.css" %}"/>
+    {{ html_head|safe }}
+</head>
+<body>
+<div class="container main-box">
+    <div class="autoconfig-flow" style="padding-top:2rem;padding-bottom:2rem;">
+        <div class="autoconfig-card autoconfig-product-list-card">
+            <div class="autoconfig-event-meta">
+                <div class="autoconfig-event-calendar" aria-hidden="true">
+                    <span class="autoconfig-event-calendar__month">{{ request.event.date_from|date:"M" }}</span>
+                    <span class="autoconfig-event-calendar__day">{{ request.event.date_from|date:"j" }}</span>
+                </div>
+                <div class="autoconfig-event-meta__content">
+                    <p class="autoconfig-event-meta__name">{{ request.event.name }}</p>
+                    <p class="autoconfig-event-meta__dates">
+                        {% if request.event.settings.show_times %}
+                            {{ request.event.get_date_range_display_with_times_as_html }}
+                        {% else %}
+                            {{ request.event.get_date_range_display }}
+                        {% endif %}
+                    </p>
+                    {% if request.event.location %}
+                        <p class="autoconfig-event-meta__location">{{ request.event.location }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <hr class="autoconfig-divider">
+            <p style="margin:0;color:var(--autoconfig-card-text,#111);">
+                {% trans "This ticket shop is currently offline. Please try again later." %}
+            </p>
+        </div>
+    </div>
+</div>
+    <footer>
+        <nav aria-label="{% trans "Footer Navigation" %}">
+            <ul>
+                {% include "pretixpresale/base_footer.html" %}
+            </ul>
+        </nav>
+    </footer>
+</div>
+</body>
+</html>

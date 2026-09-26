@@ -1,0 +1,1750 @@
+/**
+ * Shop styles — injected on all presale pages.
+ * Weeztix-inspired: gray page, centered white cards, pill button, circular +/- buttons.
+ */
+
+/* Theme variables. May be overridden per organizer by an inline <style> block
+   emitted from the presale-head signal. Defaults below reproduce the original
+   hardcoded palette. */
+:root {
+    /* Organizer-customizable theme colors. */
+    --autoconfig-brand: #ff6b6b;
+    /* Derived from --autoconfig-brand so the hover state always tracks the
+       organizer's chosen brand color (~10% darker). */
+    --autoconfig-brand-hover: color-mix(in srgb, var(--autoconfig-brand), #000 12%);
+    --autoconfig-brand-ring: color-mix(in srgb, var(--autoconfig-brand), transparent 70%);
+    --autoconfig-canvas-bg: #ececec;
+    --autoconfig-canvas-text: #111111;
+    --autoconfig-card-bg: #ffffff;
+    --autoconfig-card-text: #111111;
+
+    /* Neutral ramp used for borders, secondary text, and on-dark blocks.
+       Not exposed in the organizer dashboard, but flipped by dark mode
+       (signal output overrides these on html:root). */
+    --autoconfig-border: #e5e5e5;
+    --autoconfig-text-strong: #333333;
+    --autoconfig-text-muted: #666666;
+    --autoconfig-text-faint: #999999;
+    --autoconfig-on-dark-bg: #111111;
+    --autoconfig-on-dark-text: #ffffff;
+    --autoconfig-on-brand-text: #ffffff;
+}
+
+/* ── Page shell ──────────────────────────────────────────── */
+html {
+    min-height: 100%;
+    background: var(--autoconfig-canvas-bg);
+}
+body {
+    min-height: 100vh;
+    background: var(--autoconfig-canvas-bg);
+    color: var(--autoconfig-canvas-text);
+}
+
+/* Pretix sets explicit colors on heading/text classes that break our theme
+   inheritance. Reset them to `inherit` so they pick up the surrounding
+   container's themed color (canvas-text on the page, card-text inside cards).
+   Selectors are chained (e.g. `.panel .panel-heading`) so they reach the same
+   specificity as Bootstrap's `.panel-default > .panel-heading` and win on
+   source order. */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.lead,
+.panel .panel-heading,
+.panel .panel-heading strong,
+.panel .panel-heading a,
+.panel .panel-title,
+.thank-you .lead {
+    color: inherit;
+}
+
+/* Footer "powered by ..." link uses the organizer's brand color. */
+footer a { color: var(--autoconfig-brand); }
+footer a:hover, footer a:focus { color: var(--autoconfig-brand-hover); }
+
+/* Powered-by footer — three-line layout: label / logo / attribution */
+.autoconfig-footer-poweredby { display: block !important; line-height: 1.4; text-align: center; }
+.autoconfig-footer-poweredby__label,
+.autoconfig-footer-poweredby__logo,
+.autoconfig-footer-poweredby__line2 { display: block !important; }
+.autoconfig-footer-poweredby__label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--autoconfig-text-faint, #9ca3af); }
+.autoconfig-footer-poweredby__logo { margin: 0.1rem 0; }
+.autoconfig-footer-logo { font-size: 1.35rem !important; font-weight: 700; letter-spacing: -0.03em; color: var(--autoconfig-brand) !important; text-transform: none !important; }
+.autoconfig-footer-poweredby__line2 { font-size: 0.65rem; color: var(--autoconfig-text-faint, #9ca3af); }
+
+/* Narrow single column — constrains the Bootstrap container */
+.main-box {
+    max-width: 540px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Hide the default Bootstrap page-header event title (redundant with card header) */
+.page-header { display: none; }
+
+/* ── White cards ─────────────────────────────────────────── */
+.autoconfig-card {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+    margin-bottom: 10px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--autoconfig-border);
+}
+
+/* Group cards inside a soft gray wrapper like weeztix */
+.autoconfig-flow {
+    background: transparent;
+    border-radius: 14px;
+    padding: .9rem;
+}
+
+/* ── Event info inside the ticket card ───────────────────── */
+.autoconfig-event-meta {
+    display: flex;
+    align-items: flex-start;
+    gap: .8rem;
+    margin-bottom: .75rem;
+}
+.autoconfig-event-calendar {
+    width: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex: 0 0 40px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+}
+.autoconfig-event-calendar__month {
+    display: block;
+    background: var(--autoconfig-on-dark-bg);
+    color: var(--autoconfig-on-dark-text);
+    text-transform: uppercase;
+    text-align: center;
+    font-size: .62rem;
+    letter-spacing: .04em;
+    font-weight: 700;
+    line-height: 1;
+    padding: .3rem 0 .12rem;
+}
+.autoconfig-event-calendar__day {
+    display: block;
+    background: var(--autoconfig-on-dark-bg);
+    color: var(--autoconfig-on-dark-text);
+    text-align: center;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: .06rem 0 .34rem;
+}
+.autoconfig-event-meta__content { min-width: 0; }
+.autoconfig-event-meta__name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--autoconfig-card-text);
+    margin: 0 0 .2rem;
+}
+.autoconfig-event-meta__dates {
+    font-size: .85rem;
+    color: var(--autoconfig-text-muted);
+    margin: 0 0 .1rem;
+}
+.autoconfig-event-meta__location {
+    font-size: .8rem;
+    color: var(--autoconfig-text-faint);
+    margin: 0;
+}
+
+/* Hide Pretix's default info-row (location/calendar icons — too verbose for this layout) */
+.autoconfig-card .info-row { display: none; }
+
+/* Frontpage text (event description on index page) */
+.autoconfig-frontpage-text {
+    margin-bottom: .75rem;
+    font-size: .9rem;
+    color: var(--autoconfig-text-strong);
+}
+
+/* ── Divider inside the ticket card ─────────────────────── */
+.autoconfig-divider {
+    border: none;
+    border-top: 1px solid var(--autoconfig-border);
+    margin: .75rem 0;
+}
+
+/* ── Ticket rows ─────────────────────────────────────────── */
+
+/* Override Pretix's aside / .item-category margin */
+.autoconfig-ticket-rows .front-page,
+.autoconfig-ticket-rows aside.front-page { padding: 0; margin: 0; }
+.autoconfig-ticket-rows .item-category { margin-bottom: 0; }
+
+/* Hide sr-only category headings that have no visual role */
+.autoconfig-ticket-rows .h3.sr-only,
+.autoconfig-ticket-rows h3.sr-only { display: none; }
+
+/* Each product row: flex instead of Bootstrap float grid */
+.autoconfig-ticket-rows article.product-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    align-items: center;
+    gap: .75rem;
+    padding: .65rem 0;
+    border: 0 !important;
+    float: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+}
+.autoconfig-ticket-rows article.product-row:last-of-type { border-bottom: none; }
+.autoconfig-ticket-rows section.item-category,
+.autoconfig-ticket-rows section.item-category article.row.product-row,
+.autoconfig-ticket-rows section.item-category article.row.product-row::before,
+.autoconfig-ticket-rows section.item-category article.row.product-row::after {
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+.autoconfig-ticket-rows article.product-row,
+.autoconfig-ticket-rows article.product-row + article.product-row,
+.autoconfig-ticket-rows .item-category hr,
+.autoconfig-ticket-rows hr {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+.autoconfig-ticket-rows hr { display: none !important; }
+
+/* Reset Bootstrap col widths */
+.autoconfig-ticket-rows article.product-row [class*="col-"] {
+    float: none !important;
+    width: auto !important;
+    padding: 0 !important;
+}
+
+/* Name column: grows */
+.autoconfig-ticket-rows .col-md-8 {
+    grid-column: 1;
+    min-width: 0;
+}
+.autoconfig-ticket-rows .product-description h4 {
+    font-size: .95rem;
+    font-weight: 600;
+    margin: 0 0 .1rem;
+    color: var(--autoconfig-card-text);
+}
+.autoconfig-ticket-rows .autoconfig-item-inline-price {
+    margin: .05rem 0 0;
+    font-size: .8rem;
+    color: var(--autoconfig-text-muted);
+    line-height: 1.3;
+}
+
+/* What the tickets already in the cart cost, when that differs from the list price above
+   (e.g. a discount code applied to some of them). Filled by live_cart.js. */
+.autoconfig-ticket-rows .autoconfig-item-cart-prices {
+    margin: .1rem 0 0;
+    font-size: .8rem;
+    color: var(--autoconfig-text-strong);
+    line-height: 1.3;
+}
+
+/* Hide right-side base price on index; inline price+fee below title is the source of truth. */
+.autoconfig-ticket-rows .col-md-2.price {
+    display: none !important;
+}
+
+/* Availability / quantity column */
+.autoconfig-ticket-rows .availability-box,
+.autoconfig-ticket-rows .col-md-2.availability-box {
+    grid-column: 2;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Quantity control group */
+.autoconfig-ticket-rows .input-item-count-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .3rem;
+    border: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+/* Circular −/+ buttons */
+.autoconfig-ticket-rows .input-item-count-dec,
+.autoconfig-ticket-rows .input-item-count-inc {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    flex: 0 0 30px;
+    padding: 0;
+    box-shadow: none;
+    transition: opacity .15s;
+}
+.autoconfig-ticket-rows .input-item-count-dec {
+    background: transparent;
+    border: 1.5px solid var(--autoconfig-border) !important;
+    color: var(--autoconfig-text-faint);
+}
+.autoconfig-ticket-rows .input-item-count-dec:hover { border-color: var(--autoconfig-text-faint) !important; color: var(--autoconfig-text-muted); }
+
+.autoconfig-ticket-rows .input-item-count-inc {
+    background: var(--autoconfig-brand);
+    border: none !important;
+    color: var(--autoconfig-on-brand-text);
+}
+.autoconfig-ticket-rows .input-item-count-inc:hover { background: var(--autoconfig-brand-hover); }
+
+/* Quantity number input */
+.autoconfig-ticket-rows .input-item-count {
+    border: none !important;
+    box-shadow: none !important;
+    width: 1.6rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    font-style: normal;
+    background: transparent;
+    padding: 0;
+    -moz-appearance: textfield;
+    color: var(--autoconfig-card-text);
+}
+.autoconfig-ticket-rows .input-item-count::-webkit-outer-spin-button,
+.autoconfig-ticket-rows .input-item-count::-webkit-inner-spin-button { -webkit-appearance: none; }
+.autoconfig-ticket-rows .input-item-count::placeholder {
+    font-style: normal;
+    opacity: 1;
+}
+
+/* Unavailable label */
+.autoconfig-ticket-rows .availability-unavailable { font-size: .8rem; color: var(--autoconfig-text-faint); }
+
+/* In-cart badge */
+.autoconfig-ticket-rows .textbubble-success {
+    font-size: .72rem;
+    background: #e8f5e9;
+    color: #388e3c;
+    border-radius: 20px;
+    padding: .1rem .5rem;
+    margin-left: .4rem;
+    vertical-align: middle;
+}
+
+/* ── Action card ─────────────────────────────────────────── */
+.autoconfig-action-card {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+    margin-bottom: 10px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border: 1px solid var(--autoconfig-border);
+}
+
+/* Pill add-to-cart / proceed button */
+.autoconfig-pill-btn,
+.autoconfig-pill-btn:visited {
+    display: inline-flex;
+    align-items: center;
+    gap: .3em;
+    padding: .7rem 1.75rem;
+    background: var(--autoconfig-brand);
+    color: var(--autoconfig-on-brand-text) !important;
+    border: none;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 1.4;
+}
+.autoconfig-pill-btn:hover,
+.autoconfig-pill-btn:focus {
+    background: var(--autoconfig-brand-hover);
+    color: var(--autoconfig-on-brand-text) !important;
+    outline: none;
+    box-shadow: 0 0 0 3px var(--autoconfig-brand-ring);
+    text-decoration: none;
+}
+
+/* ── Voucher card ────────────────────────────────────────── */
+.autoconfig-voucher-card .h3 {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--autoconfig-text-faint);
+    margin: 0 0 .75rem;
+}
+.autoconfig-voucher-row {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+.autoconfig-voucher-input {
+    flex: 1;
+    border-radius: 8px !important;
+}
+.autoconfig-voucher-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 999px !important;
+}
+
+/* ── Referral voucher banner (shop page) ──────────────────── */
+.autoconfig-referral-banner {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .6rem 1rem;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    font-size: .88rem;
+    margin-bottom: .75rem;
+}
+.autoconfig-referral-banner__text { flex: 1; }
+.autoconfig-referral-banner__remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--autoconfig-text-muted);
+    padding: 0 .2rem;
+    opacity: .7;
+}
+.autoconfig-referral-banner__remove:hover { opacity: 1; }
+.autoconfig-voucher-applied {
+    margin: 0;
+    font-size: .92rem;
+    font-weight: 500;
+    color: var(--autoconfig-text-strong);
+}
+.autoconfig-voucher-hint {
+    margin: .4rem 0 0;
+    font-size: .82rem;
+    color: var(--autoconfig-text-muted);
+}
+
+/* ── Resend link card ────────────────────────────────────── */
+.autoconfig-resend-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.autoconfig-resend-card p { margin: 0; font-size: .85rem; color: var(--autoconfig-text-muted); flex: 1 1 auto; }
+
+/* ── Cart box (when items are in cart) ───────────────────── */
+.autoconfig-cart-box .cart.panel {
+    border: 1px solid var(--autoconfig-border);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    background: var(--autoconfig-card-bg);
+}
+.autoconfig-cart-box .cart .panel-heading {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border-bottom: 1px solid var(--autoconfig-border);
+}
+.autoconfig-cart-box .cart .panel-heading strong,
+.autoconfig-cart-box .cart .panel-heading a { color: var(--autoconfig-card-text); }
+.autoconfig-cart-box .cart .panel-heading .panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.autoconfig-cart-header {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+}
+.autoconfig-cart-header__meta {
+    display: inline-flex;
+    flex-direction: column;
+    gap: .05rem;
+    line-height: 1.15;
+}
+.autoconfig-cart-header__name { font-size: 1rem; font-weight: 700; }
+.autoconfig-cart-header__date { font-size: .86rem; color: var(--autoconfig-text-muted); font-weight: 400; }
+.autoconfig-cart-box .cart [role="table"] {
+    margin-bottom: 0;
+    order: 1;
+    width: 100%;
+}
+.autoconfig-cart-box .cart .panel-body {
+    display: flex;
+    flex-direction: column;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row {
+    border: 0 !important;
+    box-shadow: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row [class*="col-"] {
+    float: none !important;
+    width: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable {
+    display: grid !important;
+    /* Keep a shared right rail so count controls and row total end on same x */
+    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-areas:
+        "product count"
+        "singleprice total";
+    align-items: center !important;
+    column-gap: .25rem;
+    row-gap: .35rem;
+    margin: 0;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+.autoconfig-cart-box .cart [role="cell"].product {
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.autoconfig-cart-box .cart [role="cell"].product p {
+    margin: 0;
+    padding: 0;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    hyphens: none;
+}
+.autoconfig-cart-box .cart [role="cell"].product,
+.autoconfig-cart-box .cart [role="cell"].product * {
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+}
+.autoconfig-cart-box .cart [role="cell"].count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    text-align: center;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].product {
+    grid-area: product;
+    min-width: 0 !important;
+    width: 100% !important;
+    margin-bottom: .1rem !important;
+    float: none !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].singleprice {
+    grid-area: singleprice;
+    width: fit-content !important;
+    white-space: nowrap;
+    text-align: left !important;
+    color: var(--autoconfig-text-muted);
+    margin: .05rem 0 0 !important;
+    float: none !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].count {
+    grid-area: count;
+    width: fit-content !important;
+    justify-self: end;
+    align-self: start;
+    display: flex;
+    justify-content: flex-end;
+    white-space: nowrap;
+    margin-top: .05rem;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].totalprice {
+    grid-area: total;
+    width: 100% !important;
+    justify-self: stretch;
+    align-self: start;
+    white-space: nowrap;
+    text-align: right !important;
+    margin-top: .05rem;
+    padding-right: .35rem !important;
+}
+.autoconfig-cart-box .cart .row.cart-row.editable > .totalprice.price {
+    padding-right: .35rem !important;
+    margin-right: .35rem !important;
+    box-sizing: border-box;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].singleprice,
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].totalprice {
+    margin-right: 0 !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) [role="cell"]:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) [role="cell"]:empty {
+    display: none;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) [role="cell"].price {
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.total {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: .75rem !important;
+    padding-right: .35rem !important;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row > .clearfix {
+    display: none !important;
+}
+.autoconfig-cart-box .cart [role="cell"].count form {
+    margin: 0;
+}
+.autoconfig-cart-box .cart [role="cell"].count .btn-link {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    text-decoration: none;
+    border: 1px solid var(--autoconfig-border);
+    color: var(--autoconfig-text-muted);
+}
+.autoconfig-cart-box .cart [role="cell"].count .btn-link:hover {
+    border-color: var(--autoconfig-text-faint);
+    color: var(--autoconfig-text-muted);
+}
+.autoconfig-cart-box .cart [role="cell"].singleprice,
+.autoconfig-cart-box .cart [role="cell"].totalprice {
+    text-align: right;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.editable [role="cell"].totalprice small {
+    display: none;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.total [role="cell"].totalprice small {
+    display: none;
+}
+.autoconfig-cart-box .cart [role="row"].cart-row.total [role="cell"].totalprice::after {
+    content: "Incl. taxes";
+    display: block;
+    font-size: .82rem;
+    color: var(--autoconfig-text-muted);
+}
+.autoconfig-cart-box .cart .checkout-button-row {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: .6rem;
+    order: 2;
+    width: 100%;
+}
+.autoconfig-cart-box .cart .checkout-button-row p {
+    margin: 0;
+}
+.autoconfig-cart-box .cart .checkout-button-primary .btn.btn-primary,
+.autoconfig-cart-box .cart .checkout-button-primary .btn.btn-primary:visited {
+    display: inline-flex;
+    align-items: center;
+    gap: .3em;
+    padding: .7rem 1.75rem;
+    background: var(--autoconfig-brand);
+    color: var(--autoconfig-on-brand-text) !important;
+    border: none;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.4;
+}
+.autoconfig-cart-box .cart .checkout-button-primary .btn.btn-primary:hover {
+    background: var(--autoconfig-brand-hover);
+}
+.autoconfig-cart-box .cart .checkout-button-secondary .btn.btn-default {
+    border-radius: 999px;
+}
+.autoconfig-cart-box .cart .checkout-button-secondary {
+    display: none;
+}
+.autoconfig-cart-box .cart #cart-extend-form {
+    order: 3;
+    margin-top: .75rem;
+    padding-top: .7rem;
+    border-top: 1px solid var(--autoconfig-border);
+    text-align: center;
+}
+.autoconfig-cart-box .cart .panel-body > .row {
+    order: 3;
+    width: 100%;
+}
+.autoconfig-cart-box .cart #cart-extend-form p {
+    margin: 0;
+}
+.autoconfig-cart-box .cart #cart-deadline {
+    font-size: .9rem;
+    color: var(--autoconfig-text-strong);
+}
+.autoconfig-cart-box .cart #cart-extend-button {
+    display: none;
+}
+
+/* ── Checkout pages (questions / confirm) ────────────────── */
+.autoconfig-checkout .autoconfig-card .form-group:last-child { margin-bottom: 0; }
+.autoconfig-checkout .autoconfig-card .alert { margin-bottom: .75rem; border-radius: 8px; }
+
+/* Form inputs inside our cards — match the card surface so they flip with dark mode. */
+.autoconfig-card input[type="text"],
+.autoconfig-card input[type="email"],
+.autoconfig-card input[type="tel"],
+.autoconfig-card input[type="number"],
+.autoconfig-card input[type="password"],
+.autoconfig-card input[type="search"],
+.autoconfig-card input[type="url"],
+.autoconfig-card input[type="date"],
+.autoconfig-card input[type="time"],
+.autoconfig-card textarea,
+.autoconfig-card select {
+    background-color: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border: 1px solid var(--autoconfig-border);
+}
+.autoconfig-card input::placeholder,
+.autoconfig-card textarea::placeholder {
+    color: var(--autoconfig-text-faint);
+    opacity: 1;
+}
+.autoconfig-card input:focus,
+.autoconfig-card textarea:focus,
+.autoconfig-card select:focus {
+    border-color: var(--autoconfig-brand);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--autoconfig-brand-ring);
+}
+/* Chrome autofill: force themed bg/text instead of the default yellow. */
+.autoconfig-card input:-webkit-autofill,
+.autoconfig-card input:-webkit-autofill:hover,
+.autoconfig-card input:-webkit-autofill:focus,
+.autoconfig-card textarea:-webkit-autofill,
+.autoconfig-card select:-webkit-autofill {
+    -webkit-text-fill-color: var(--autoconfig-card-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--autoconfig-card-bg) inset;
+    caret-color: var(--autoconfig-card-text);
+}
+.autoconfig-checkout-cart-card .cart-row.editable form { display: none; }
+.autoconfig-checkout .list-group-item { border-radius: 8px; }
+
+/* Bootstrap list-group items inherit a white bg + light gray border from
+   their own stylesheet. Pull them into the themed surface so panels like
+   "Cancel your order" sit cleanly on dark cards. */
+.list-group-item {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border-color: var(--autoconfig-border);
+}
+
+/* On checkout steps, keep cart summary static and remove duplicate action paths. */
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart-row form,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart-row .input-group-btn,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart-row .btn,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-footer .btn,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-heading .btn,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-heading a[href*="cart"],
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-footer a[href*="cart"] {
+    display: none !important;
+}
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-body .table,
+.autoconfig-checkout .autoconfig-checkout-cart-card .cart .panel-body .table * {
+    pointer-events: none;
+}
+/* Confirm step: cleaner cart summary row alignment */
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [class*="col-"] {
+    float: none !important;
+    width: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    display: block !important;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row {
+    display: flex !important;
+    align-items: flex-start;
+    gap: .55rem;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: .35rem 0;
+    margin: 0;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable [role="cell"].product {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable [role="cell"].singleprice {
+    order: 2;
+    flex: 0 0 58px;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable [role="cell"].count {
+    order: 3;
+    flex: 0 0 20px;
+    text-align: center;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable [role="cell"].totalprice {
+    order: 4;
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row.editable [role="cell"].totalprice small {
+    display: none;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"].totalprice small {
+    display: none !important;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"]:nth-child(4) small,
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"]:nth-child(4) .text-muted {
+    display: none !important;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"].singleprice {
+    order: 2;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"].count {
+    order: 3;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"].totalprice {
+    order: 4;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"]:nth-child(2) {
+    order: 3;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row [role="cell"]:nth-child(3) {
+    order: 2;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) [role="cell"]:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row:not(.editable):not(.total):not(.subtotal) [role="cell"].price {
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart [role="row"].cart-row > .clearfix {
+    display: none !important;
+}
+/* Confirm step: tighter info cards */
+.autoconfig-checkout form[data-asynctask] .autoconfig-item-label .h6 {
+    color: var(--autoconfig-text-muted);
+    font-size: .82rem;
+    text-decoration: none;
+}
+.autoconfig-checkout form[data-asynctask] .autoconfig-item-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+.autoconfig-checkout form[data-asynctask] .autoconfig-item-label .h6:hover {
+    text-decoration: underline;
+}
+.autoconfig-checkout form[data-asynctask] .dl-horizontal {
+    margin-bottom: .2rem !important;
+}
+.autoconfig-checkout form[data-asynctask] .dl-horizontal dt {
+    width: 130px;
+    color: var(--autoconfig-text-muted);
+}
+.autoconfig-checkout form[data-asynctask] .dl-horizontal dd {
+    margin-left: 140px;
+}
+.autoconfig-confirm-summary-card {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+.autoconfig-confirm-summary-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 58px 22px auto;
+    align-items: start;
+    gap: .55rem;
+    padding: .3rem 0;
+}
+.autoconfig-confirm-summary-row__single,
+.autoconfig-confirm-summary-row__count,
+.autoconfig-confirm-summary-row__total {
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-row__count {
+    text-align: center;
+}
+.autoconfig-confirm-summary-row__attendee {
+    margin: .2rem 0 0;
+    font-size: .88rem;
+    color: var(--autoconfig-text-muted);
+    line-height: 1.25;
+}
+.autoconfig-confirm-summary-row--total {
+    margin-top: .35rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--autoconfig-border);
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+.autoconfig-confirm-summary-row--fee .autoconfig-confirm-summary-row__product {
+    grid-column: 1;
+}
+.autoconfig-confirm-summary-row--fee .autoconfig-confirm-summary-row__total {
+    grid-column: 4;
+    justify-self: end;
+    text-align: right;
+}
+.autoconfig-confirm-payment-line {
+    margin: 0;
+    color: var(--autoconfig-text-strong);
+    text-align: left;
+}
+.autoconfig-confirm-payment-line strong {
+    margin-right: .35rem;
+}
+.autoconfig-confirm-contact-line {
+    margin: 0 0 .25rem;
+    color: var(--autoconfig-text-strong);
+    text-align: left;
+}
+.autoconfig-confirm-contact-line:last-child {
+    margin-bottom: 0;
+}
+.autoconfig-confirm-contact-line strong {
+    margin-right: .35rem;
+}
+.autoconfig-confirm-summary-card .cart .cart-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-confirm-summary-card .cart [role="columnheader"],
+.autoconfig-confirm-summary-card .cart .sr-only {
+    display: none !important;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 22px 58px auto;
+    align-items: start;
+    column-gap: .55rem;
+    row-gap: .1rem;
+    padding: .3rem 0;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable [role="cell"].product {
+    grid-column: 1;
+    min-width: 0;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable [role="cell"].singleprice {
+    grid-column: 2;
+    width: 58px;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable [role="cell"].count {
+    grid-column: 3;
+    width: 22px;
+    text-align: center;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable [role="cell"].totalprice {
+    grid-column: 4;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row {
+    display: flex !important;
+    align-items: flex-start;
+    gap: .55rem;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row [role="cell"].product {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row [role="cell"].singleprice {
+    order: 2;
+    flex: 0 0 58px;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row [role="cell"].count {
+    order: 3;
+    flex: 0 0 22px;
+    text-align: center;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row [role="cell"].totalprice,
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row [role="cell"].price {
+    order: 4;
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable > :nth-child(2) {
+    grid-column: 3;
+}
+.autoconfig-confirm-summary-card .cart [role="row"].cart-row.editable > :nth-child(3) {
+    grid-column: 2;
+}
+.autoconfig-confirm-summary-card .cart [role="row"] [role="cell"].totalprice small,
+.autoconfig-confirm-summary-card .cart [role="row"] [role="cell"].price small {
+    display: none !important;
+}
+.autoconfig-confirm-summary-card .cart [role="row"] [role="cell"].singleprice ~ [role="cell"].totalprice {
+    max-height: 1.45em;
+    overflow: hidden;
+}
+.autoconfig-confirm-summary-card #cart-extend-form,
+.autoconfig-confirm-summary-card #cart-extend-button,
+.autoconfig-confirm-summary-card #cart-deadline {
+    display: none !important;
+}
+/* Confirm step fallback selectors based on pretix cart classes */
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row {
+    display: flex !important;
+    align-items: flex-start;
+    gap: .55rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row > [class*="col-"] {
+    float: none !important;
+    width: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .product {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .singleprice {
+    order: 2;
+    flex: 0 0 58px;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .count {
+    order: 3;
+    flex: 0 0 20px;
+    text-align: center;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .totalprice,
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .price {
+    order: 4;
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .totalprice small,
+.autoconfig-checkout:not(.autoconfig-checkout--questions) .autoconfig-checkout-cart-card .cart .cart-row.row .price small {
+    display: none !important;
+}
+
+/* Step header */
+.autoconfig-step-header {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--autoconfig-canvas-text);
+    line-height: 1.4;
+}
+.autoconfig-step-num { color: var(--autoconfig-text-faint); font-weight: 400; margin-left: .3em; }
+.autoconfig-checkout-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 1rem;
+}
+.autoconfig-top-back {
+    position: absolute;
+    left: 0;
+    color: var(--autoconfig-brand);
+    text-decoration: none;
+    font-size: .92rem;
+}
+.autoconfig-top-back:hover,
+.autoconfig-top-back:focus {
+    color: var(--autoconfig-brand-hover);
+    text-decoration: underline;
+}
+
+/* Timer */
+.autoconfig-timer {
+    text-align: center;
+    color: var(--autoconfig-text-faint);
+    font-size: .82rem;
+    margin: .4rem 0 .75rem;
+}
+
+/* Back link */
+.autoconfig-back {
+    display: block;
+    text-align: center;
+    color: var(--autoconfig-text-muted);
+    font-size: .87rem;
+    margin-top: .5rem;
+    text-decoration: none;
+}
+.autoconfig-back:hover { color: var(--autoconfig-text-strong); text-decoration: underline; }
+.autoconfig-questions-form .row {
+    margin-left: -.4rem;
+    margin-right: -.4rem;
+}
+.autoconfig-questions-form .row > [class*="col-"] {
+    padding-left: .4rem;
+    padding-right: .4rem;
+}
+.autoconfig-questions-total-card {
+    padding: 0;
+    overflow: hidden;
+}
+.autoconfig-questions-total-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: 1rem 1.25rem;
+}
+.autoconfig-questions-total-amount strong {
+    display: block;
+    font-size: 1.3rem;
+    line-height: 1.1;
+}
+.autoconfig-questions-total-label {
+    display: block;
+    font-size: .82rem;
+    color: var(--autoconfig-text-strong);
+    margin-bottom: .2rem;
+}
+.autoconfig-questions-total-footer {
+    border-top: 1px solid var(--autoconfig-border);
+    padding: .7rem 1.25rem;
+    text-align: center;
+}
+.autoconfig-questions-total-footer p {
+    margin: 0;
+    color: var(--autoconfig-text-strong);
+    font-size: .9rem;
+}
+
+/* Per-ticket question card label */
+.autoconfig-item-label {
+    margin-top: 0;
+    margin-bottom: .75rem;
+    font-size: .9rem;
+    color: var(--autoconfig-text-strong);
+}
+
+/* Payment and optional account cards */
+.autoconfig-payment-checkout-form .autoconfig-action-card {
+    box-shadow: none;
+    padding: .75rem 0 0;
+    margin: .75rem 0 0;
+}
+.autoconfig-payment-card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+.autoconfig-payment-card .panel-body { padding: 1rem; }
+
+/* ── Order / Thank-you page ─────────────────────────────── */
+.thank-you {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border: 1px solid var(--autoconfig-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 10px;
+}
+.thank-you .fa-check-circle {
+    color: #48a868;
+}
+.thank-you .lead {
+    margin-bottom: .6rem;
+}
+/* Keep order pages visually consistent with checkout cards */
+.panel {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border-radius: 12px;
+    border: 1px solid var(--autoconfig-border);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    overflow: hidden;
+}
+.panel .panel-heading {
+    background: var(--autoconfig-card-bg) !important;
+    border-bottom: 1px solid var(--autoconfig-border);
+}
+.panel .panel-title {
+    color: var(--autoconfig-text-strong) !important;
+}
+.panel .panel-title .h6,
+.panel .panel-title a.h6 {
+    display: none;
+}
+/* Order CTA buttons */
+.btn.btn-primary,
+.btn.btn-primary.btn-lg {
+    border: 0;
+    border-radius: 999px;
+    background: var(--autoconfig-brand);
+}
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary.btn-lg:hover,
+.btn.btn-primary.btn-lg:focus {
+    background: var(--autoconfig-brand-hover);
+}
+
+/* Secondary / default button (e.g. "Open window again"): outlined, themed.
+   Quantity +/- buttons share the `btn-default` class but have their own
+   stronger visual identity, so they're excluded here. */
+.btn.btn-default:not(.input-item-count-inc):not(.input-item-count-dec),
+.btn.btn-default:not(.input-item-count-inc):not(.input-item-count-dec):visited {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border: 1px solid var(--autoconfig-border);
+}
+.btn.btn-default:not(.input-item-count-inc):not(.input-item-count-dec):hover,
+.btn.btn-default:not(.input-item-count-inc):not(.input-item-count-dec):focus {
+    background: var(--autoconfig-canvas-bg);
+    color: var(--autoconfig-card-text);
+    border-color: var(--autoconfig-text-muted);
+}
+
+/* Destructive button (e.g. "Cancel order"): outlined red so it stays
+   recognisable as a danger action without a solid red block clashing
+   with the rest of the themed page. */
+.btn.btn-danger,
+.btn.btn-danger:visited {
+    background: transparent;
+    color: #c44f4f;
+    border: 1px solid #c44f4f;
+}
+.btn.btn-danger:hover,
+.btn.btn-danger:focus {
+    background: #c44f4f;
+    color: #ffffff;
+    border-color: #c44f4f;
+}
+
+/* Warning bubble ("Payment pending"): keep amber semantics but use a
+   translucent fill so it sits cleanly on any card background. */
+.textbubble-warning {
+    background: color-mix(in srgb, #f3b948, transparent 80%);
+    color: #f3b948;
+    border-radius: 20px;
+    padding: .1rem .6rem;
+    font-weight: 500;
+}
+
+/* Ordered items table: cleaner alignment and no VAT noise */
+.panel.cart .cart-row [class*="col-"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.panel.cart .cart-row [class*="col-md-offset-"],
+.panel.cart .cart-row [class*="col-sm-offset-"],
+.panel.cart .cart-row [class*="col-xs-offset-"] {
+    margin-left: 0 !important;
+}
+.panel.cart .cart-row.editable {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.panel.cart .cart-row.editable .product {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.panel.cart .cart-row.editable .download {
+    flex: 0 0 auto;
+    min-width: 88px;
+    text-align: center;
+}
+.panel.cart .cart-row.editable .download .btn,
+.panel.cart .cart-row.editable .download a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    min-width: 88px;
+    height: 36px;
+    padding: 0 .75rem;
+    border-radius: 999px;
+    line-height: 1;
+    white-space: nowrap;
+}
+.panel.cart .cart-row.editable .download form .btn.btn-sm.btn-primary {
+    width: 88px !important;
+    min-width: 88px !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: clip;
+    padding: 0 .55rem !important;
+}
+.panel.cart .cart-row.editable .totalprice,
+.panel.cart .cart-row.editable .price {
+    flex: 0 0 96px;
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+/* Order page: hide per-item row prices, keep summary total below */
+.panel.cart .cart-row.editable .totalprice,
+.panel.cart .cart-row.has-downloads .totalprice,
+.panel.cart .cart-row.has-downloads .totalprice.price,
+.panel.cart .cart-row.has-downloads [role="cell"].totalprice {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    flex: 0 0 0 !important;
+    overflow: hidden !important;
+}
+.panel.cart [role="columnheader"].totalprice,
+.panel.cart [role="columnheader"].price {
+    display: none !important;
+}
+.panel.cart [role="row"] [role="columnheader"]:last-child {
+    display: none !important;
+}
+.panel.cart .cart-row.has-downloads {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.panel.cart .cart-row.has-downloads .product {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.panel.cart .cart-row.has-downloads .download-desktop {
+    flex: 0 0 auto;
+    min-width: 88px;
+    text-align: center;
+}
+.panel.cart .cart-row.has-downloads .download-desktop .btn.btn-sm.btn-primary {
+    min-width: 88px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+/* Order page only: cart with download rows => hide intermediate fee rows */
+.panel.cart:has(.cart-row.has-downloads) .cart-row:not(.editable):not(.has-downloads):not(.total):not(.subtotal) {
+    display: none !important;
+}
+.panel.cart .cart-row [role="cell"].totalprice small,
+.panel.cart .cart-row .price small {
+    display: none !important;
+}
+/* Service fee and total right edge alignment */
+.panel.cart .cart-row:not(.editable):not(.total):not(.subtotal) {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding-left: .4rem;
+    padding-right: .4rem;
+}
+.panel.cart .cart-row:not(.editable):not(.subtotal) > [class*="col-"]:first-child,
+.panel.cart .cart-row:not(.editable):not(.subtotal) [role="cell"]:first-child {
+    flex: 1 1 auto;
+}
+.panel.cart .cart-row > .col-md-4.col-xs-6 {
+    padding-left: 1.1rem !important;
+}
+.autoconfig-cart-box .panel.cart .cart-row > .col-md-4.col-xs-6 {
+    padding-left: 0 !important;
+}
+.panel.cart .cart-row:not(.editable):not(.subtotal) .price,
+.panel.cart .cart-row:not(.editable):not(.subtotal) .totalprice {
+    flex: 0 0 96px;
+    margin-left: auto;
+    padding-right: .85rem !important;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.panel.cart .cart-row > .col-md-3.col-xs-6.col-md-offset-5.price {
+    padding-right: .85rem !important;
+}
+.autoconfig-cart-box .panel.cart .cart-row > .col-md-3.col-xs-6.col-md-offset-5.price {
+    padding-right: 0 !important;
+}
+.autoconfig-cart-box .panel.cart .cart-row:not(.editable):not(.total):not(.subtotal) {
+    padding-right: 0 !important;
+}
+.panel.cart .cart-row.total {
+    padding-left: 1.1rem !important;
+    padding-right: .85rem !important;
+}
+/* Your information block: left align label/value pairs */
+.panel .panel-body .dl-horizontal dt {
+    float: none;
+    width: auto;
+    text-align: left;
+    color: var(--autoconfig-text-muted);
+    margin: 0;
+}
+.panel .panel-body .dl-horizontal dd {
+    margin-left: 0;
+    margin-bottom: .35rem;
+}
+/* Order page: hide the "Your information" panel */
+.panel.cart + .row .panel.panel-default {
+    display: none !important;
+}
+
+/* Mandatory checkboxes on the confirm step get a red asterisk so the
+   buyer can tell at a glance that they have to be ticked. Force the
+   rich-text wrapping <p> to render inline so the asterisk stays on
+   the same line as the text. */
+.checkbox label:has(input[required]) p {
+    display: inline;
+    margin: 0;
+}
+.checkbox label:has(input[required])::after {
+    content: " *";
+    color: #c44f4f;
+    font-weight: 700;
+    margin-left: .15em;
+}
+
+/* Questions step / any presale form field: red asterisk on labels of
+   required text/email/number/select/textarea inputs. The :has() selector
+   finds form-groups whose input is required, then we append `*` to the
+   visible label inside. */
+.autoconfig-checkout .form-group:has(input[required]) > label,
+.autoconfig-checkout .form-group:has(select[required]) > label,
+.autoconfig-checkout .form-group:has(textarea[required]) > label {
+    position: relative;
+}
+.autoconfig-checkout .form-group:has(input[required]) > label::after,
+.autoconfig-checkout .form-group:has(select[required]) > label::after,
+.autoconfig-checkout .form-group:has(textarea[required]) > label::after {
+    content: " *";
+    color: #c44f4f;
+    font-weight: 700;
+    margin-left: .15em;
+}
+
+/* Disabled Pay button (until all required confirm-step checkboxes are
+   ticked) — visually muted so it's clear the action isn't available. */
+.autoconfig-pill-btn[disabled],
+.autoconfig-pill-btn.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--autoconfig-brand);
+}
+
+/* ── Modals / dialogs ────────────────────────────────────── */
+/* Pretix's loading / popup / cookie / cart-extend modals — themed
+   so they don't fall back to hardcoded white on white text. Targets
+   both the older .modal-wrapper structure and the modern <dialog>
+   element. */
+.modal-wrapper {
+    background: rgba(0, 0, 0, .45);
+}
+.modal-wrapper .modal-card,
+dialog.modal-card {
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+    border: 1px solid var(--autoconfig-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+.modal-wrapper .modal-card-icon,
+dialog.modal-card .modal-card-icon {
+    background: var(--autoconfig-brand);
+    color: var(--autoconfig-on-brand-text);
+}
+.modal-wrapper .modal-card-content,
+dialog.modal-card .modal-card-content,
+.modal-wrapper .modal-card-content p,
+dialog.modal-card .modal-card-content p {
+    color: var(--autoconfig-card-text);
+}
+.modal-wrapper .modal-card-content h2,
+.modal-wrapper .modal-card-content h3,
+dialog.modal-card .modal-card-content h2,
+dialog.modal-card .modal-card-content h3 {
+    color: inherit;
+}
+.modal-wrapper .progress,
+dialog.modal-card .progress {
+    background: var(--autoconfig-canvas-bg);
+}
+.modal-wrapper .progress-bar.progress-bar-success,
+dialog.modal-card .progress-bar.progress-bar-success {
+    background: var(--autoconfig-brand);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 540px) {
+    .main-box { padding-left: .5rem !important; padding-right: .5rem !important; }
+    .autoconfig-flow { padding: .45rem; margin-top: 1.5rem; }
+    .autoconfig-card,
+    .autoconfig-action-card {
+        border-radius: 10px;
+        padding: .95rem 1rem;
+        margin-bottom: .55rem;
+    }
+    .autoconfig-action-card { flex-direction: column; align-items: stretch; }
+    .autoconfig-pill-btn { text-align: center; justify-content: center; width: 100%; }
+
+    .autoconfig-checkout-topbar {
+        min-height: 1.35rem;
+        margin-bottom: .75rem;
+    }
+    .autoconfig-step-header {
+        font-size: .98rem;
+        margin-bottom: .75rem;
+        padding: 0 2.2rem;
+    }
+    .autoconfig-top-back {
+        font-size: .88rem;
+    }
+
+    .autoconfig-ticket-rows article.product-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .5rem;
+        padding: .55rem 0;
+    }
+    .autoconfig-ticket-rows .col-md-2.price {
+        font-size: .8rem;
+    }
+    .autoconfig-ticket-rows .input-item-count-group {
+        gap: .2rem;
+    }
+    .autoconfig-ticket-rows .input-item-count-dec,
+    .autoconfig-ticket-rows .input-item-count-inc {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+    }
+
+    .autoconfig-cart-box .cart .panel-body {
+        padding: .85rem .9rem;
+    }
+    .autoconfig-cart-box .cart [role="row"].cart-row {
+        padding-top: .55rem;
+        padding-bottom: .55rem;
+    }
+    /* Use the global mobile-first grid layout for editable cart rows. */
+    .autoconfig-cart-box .cart [role="cell"].count .btn-link {
+        width: 28px;
+        height: 28px;
+    }
+    .autoconfig-cart-box .cart .checkout-button-row {
+        gap: .85rem;
+        margin-top: .35rem;
+    }
+    .autoconfig-cart-box .cart .checkout-button-primary {
+        width: 100%;
+    }
+    .autoconfig-cart-box .cart .checkout-button-primary .btn.btn-primary,
+    .autoconfig-cart-box .cart .checkout-button-primary .btn.btn-primary:visited {
+        width: 100%;
+        min-height: 46px;
+        justify-content: center;
+    }
+
+    /* Cart row layout is now mobile-first globally (all viewports). */
+
+    .autoconfig-questions-total-main {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .65rem;
+        padding: .8rem .95rem;
+    }
+    .autoconfig-questions-total-footer {
+        padding: .6rem .95rem;
+    }
+
+    .autoconfig-confirm-summary-row {
+        grid-template-columns: minmax(0, 1fr) 52px 20px auto;
+        gap: .45rem;
+    }
+    .autoconfig-confirm-summary-row__attendee {
+        font-size: .84rem;
+    }
+
+    .thank-you {
+        padding: .85rem .95rem;
+    }
+    .thank-you .h1 {
+        font-size: 2rem;
+    }
+    .panel.cart .cart-row.editable .download {
+        flex: 0 0 auto;
+        min-width: 88px;
+    }
+    .panel.cart .cart-row.editable .totalprice,
+    .panel.cart .cart-row.editable .price {
+        flex: 0 0 88px;
+    }
+    .panel.cart .cart-row.total {
+        padding-left: .9rem !important;
+        padding-right: .7rem !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .autoconfig-event-meta {
+        gap: .6rem;
+    }
+    .autoconfig-event-meta__name {
+        font-size: 1rem;
+    }
+    .autoconfig-checkout-topbar {
+        margin-bottom: .6rem;
+    }
+    .autoconfig-step-header {
+        padding: 0 2rem;
+        font-size: .94rem;
+    }
+    .autoconfig-questions-form .row > [class*="col-"] {
+        float: none !important;
+        width: 100% !important;
+    }
+    .autoconfig-questions-form .row > [class*="col-"]:first-child {
+        margin-bottom: .55rem;
+    }
+    .panel.cart .cart-row.editable .totalprice,
+    .panel.cart .cart-row.editable .price {
+        flex: 0 0 80px;
+    }
+}
+
+.autoconfig-cart-summary-card {
+    margin-top: 10px;
+}
+.autoconfig-cart-summary-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.autoconfig-cart-summary-amount {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+}
+.autoconfig-cart-summary-label {
+    font-size: .85rem;
+    color: var(--autoconfig-text-muted);
+}
+.autoconfig-cart-summary-amount strong {
+    font-size: 1.25rem;
+    line-height: 1.1;
+}
+.autoconfig-cart-summary-card .autoconfig-pill-btn {
+    min-width: 220px;
+}
+.autoconfig-cart-box .checkout-button-row--secondary-only {
+    justify-content: flex-end;
+    border-top: 0;
+    padding-top: .25rem;
+}
+@media (max-width: 700px) {
+    .autoconfig-cart-summary-main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .autoconfig-cart-summary-card .autoconfig-pill-btn {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Keep total and reservation text only in summary card */
+.autoconfig-cart-box .cart [role="row"].cart-row.total {
+    display: none !important;
+}
+.autoconfig-cart-box .cart #cart-deadline,
+.autoconfig-cart-box .cart #cart-extend-form {
+    display: none !important;
+}
+.autoconfig-cart-summary-footer {
+    margin-top: .75rem;
+    padding-top: .65rem;
+    border-top: 1px solid var(--autoconfig-border);
+    font-size: .95rem;
+    text-align: center;
+    color: var(--autoconfig-text-strong);
+}
+#cart-deadline-short {
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ── Per-order checkout: positions 2+ are kept in the DOM (so they POST
+   with their full per-position field names) but hidden from the buyer. ── */
+[data-autoconfig-position-mirror] { display: none; }
+
+
+/* ── Private link: what the link covers, and why a change was refused ─────── */
+.autoconfig-link-cap {
+    margin: 0 0 .75rem;
+    font-size: .85rem;
+    color: var(--autoconfig-text-muted, #64748b);
+}
+
+.autoconfig-cart-error {
+    margin: .75rem 0 0;
+    font-size: .85rem;
+    color: #b91c1c;
+}

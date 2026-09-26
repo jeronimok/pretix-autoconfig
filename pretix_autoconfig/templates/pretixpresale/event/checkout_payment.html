@@ -1,0 +1,157 @@
+{% extends "pretixpresale/event/checkout_base.html" %}
+{% load i18n %}
+{% load money %}
+{% load bootstrap3 %}
+{% load rich_text %}
+{% load static %}
+{% block custom_header %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "pretix_autoconfig/checkout_payment.css" %}"/>
+    {% include "pretixpresale/event/fragment_walletdetection_head.html" %}
+{% endblock %}
+{% block inner %}
+    {% if current_payments %}
+    <div class="autoconfig-card">
+        <p>{% trans "You already selected the following payment methods:" %}</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="list-group autoconfig-payment-current-payments">
+            {% for p in current_payments %}
+                <div class="list-group-item">
+                    <div class="row">
+                        <div class="col-md-7 col-sm-6 col-xs-8">
+                            <strong id="payment-label-{{ forloop.counter }}">{{ p.provider_name }}</strong>
+                        </div>
+                        <div class="col-md-2 col-sm-2 col-xs-4 text-right">
+                            {{ p.payment_amount|money:request.event.currency }}
+                        </div>
+                        <div class="col-md-3 col-sm-4 col-xs-12 text-right">
+                            <button name="remove_payment" value="{{ p.id }}" aria-describedby="payment-label-{{ forloop.counter }}"
+                                class="btn btn-danger">
+                                <span class="fa fa-trash"></span>
+                                {% trans "Remove payment" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            {% if remaining %}
+                <div class="list-group-item">
+                    <div class="row">
+                        <div class="col-md-7 col-sm-6 col-xs-8">
+                            <strong>{% trans "Remaining balance" %}</strong><br>
+                            <span class="text-muted">{% trans "Please select a payment method below." %}</span>
+                        </div>
+                        <div class="col-md-2 col-sm-2 col-xs-4 text-right">
+                            <strong>{{ remaining|money:request.event.currency }}</strong>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            </div>
+        </form>
+    </div>
+    {% if remaining %}
+        <p>{% trans "Please select how you want to pay the remaining balance:" %}</p>
+    {% endif %}
+    {% else %}
+        <p>{% trans "Please select how you want to pay." %}</p>
+    {% endif %}
+
+    <form method="post" class="autoconfig-payment-checkout-form">
+        {% csrf_token %}
+        <div class="autoconfig-card">
+            <h3 class="h4 autoconfig-payment-checkout__heading">{% trans "Payment method" %}</h3>
+            <h3 class="sr-only">{% trans "Payment" %}</h3>
+            {% if not current_payments or remaining %}
+                {% if event.settings.payment_explanation %}
+                    <div class="autoconfig-payment-checkout__explanation">
+                        {{ event.settings.payment_explanation|rich_text }}
+                    </div>
+                {% endif %}
+                <div class="panel-group" id="payment_accordion">
+                {% for p in providers %}
+                    <fieldset class="panel panel-default accordion-panel autoconfig-payment-card" data-provider="{{ p.provider.identifier }}">
+                        <legend class="accordion-radio">
+                            <label class="panel-heading autoconfig-payment-card__header">
+                                <span class="panel-title autoconfig-payment-card__title">
+                                    {% if show_fees %}
+                                        <strong class="pull-right flip autoconfig-payment-card__fee">{% if p.fee < 0 %}-{% else %}+{% endif %} {{ p.fee|money:event.currency|cut:"-" }}</strong>
+                                    {% endif %}
+                                    <input type="radio" name="payment" value="{{ p.provider.identifier }}"
+                                           title="{{ p.provider.public_name }}"
+                                           {% if selected == p.provider.identifier %}checked="checked"{% endif %}
+                                           aria-controls="payment_{{ p.provider.identifier }}"
+                                           data-wallets="{{ p.provider.walletqueries|join:"|" }}" />
+                                    <span class="autoconfig-payment-card__icon" aria-hidden="true"></span>
+                                    <strong class="accordion-label-text">{{ p.provider.public_name }}</strong>
+                                    {% if p.provider.identifier == 'giftcard' and p.provider.customer_gift_cards %}
+                                        <small>
+                                            {% blocktrans trimmed count count=p.provider.customer_gift_cards|length %}
+                                                ({{ count }} available)
+                                            {% plural %}
+                                                ({{ count }} available)
+                                            {% endblocktrans %}
+                                        </small>
+                                    {% endif %}
+                                </span>
+                            </label>
+                        </legend>
+                        <div id="payment_{{ p.provider.identifier }}" class="panel-body form-horizontal autoconfig-payment-card__body">
+                            {% if request.event.testmode %}
+                                {% if p.provider.test_mode_message %}
+                                    <div class="alert alert-info">
+                                        <p>{{ p.provider.test_mode_message }}</p>
+                                    </div>
+                                    {% if not request.sales_channel.type_instance.testmode_supported %}
+                                        <div class="alert alert-danger">
+                                            <p>
+                                            {% trans "This sales channel does not provide support for test mode." %}
+                                            <strong>
+                                                {% trans "If you continue, you might pay an actual order with non-existing money!" %}
+                                            </strong>
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <p>
+                                        {% trans "This payment provider does not provide support for test mode." %}
+                                        <strong>
+                                            {% trans "If you continue, actual money might be transferred." %}
+                                        </strong>
+                                        </p>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {{ p.form }}
+                        </div>
+                    </fieldset>
+                {% endfor %}
+                {% if not providers %}
+                    <p><em>{% trans "There are no payment providers enabled." %}</em></p>
+                    {% if not event.live %}
+                        <p>{% trans "Please go to the payment settings and activate one or more payment providers." %}</p>
+                    {% endif %}
+                {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="autoconfig-card autoconfig-questions-total-card">
+            <div class="autoconfig-questions-total-main">
+                <div class="autoconfig-questions-total-amount">
+                    <span class="autoconfig-questions-total-label">{% trans "Total" %} (Incl. taxes)</span>
+                    <strong>{{ cart.total|money:request.event.currency }}</strong>
+                </div>
+                <button class="autoconfig-pill-btn" type="submit">{% trans "Continue" %} ›</button>
+            </div>
+            <div class="autoconfig-questions-total-footer">
+                <p>
+                    {% blocktrans trimmed with minutes=cart.minutes_left %}
+                        The items in your cart are reserved for you for {{ minutes }} minutes.
+                    {% endblocktrans %}
+                </p>
+            </div>
+        </div>
+    </form>
+{% endblock %}

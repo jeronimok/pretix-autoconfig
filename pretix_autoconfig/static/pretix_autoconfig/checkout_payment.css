@@ -1,0 +1,162 @@
+/**
+ * Payment method selector — flat row list with logos.
+ * Actual wrapper in checkout_confirm.html: .autoconfig-card
+ */
+
+/* ── List container ───────────────────────────────────────── */
+#payment_accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+/* ── Each method row ─────────────────────────────────────── */
+.autoconfig-card .autoconfig-payment-card {
+    border: 1.5px solid var(--autoconfig-border);
+    border-radius: 10px;
+    margin-bottom: 0;
+    box-shadow: none;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+}
+
+.autoconfig-card .autoconfig-payment-card:has(input[type="radio"]:checked) {
+    border-color: var(--autoconfig-brand);
+    box-shadow: 0 0 0 1px var(--autoconfig-brand);
+}
+
+/* ── Clickable header ────────────────────────────────────── */
+.autoconfig-card .autoconfig-payment-card .autoconfig-payment-card__header {
+    margin: 0;
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+}
+
+/* Row layout: [icon] [label] [radio] */
+.autoconfig-card .autoconfig-payment-card .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.autoconfig-card .autoconfig-payment-card__icon {
+    order: 1;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 6px;
+    background-color: var(--autoconfig-canvas-bg);
+}
+
+.autoconfig-card .autoconfig-payment-card .accordion-label-text {
+    order: 2;
+    flex: 1 1 auto;
+    font-weight: 500;
+}
+
+/* Radio sits at the far right */
+.autoconfig-card .autoconfig-payment-card input[type="radio"] {
+    order: 3;
+    flex: 0 0 auto;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--autoconfig-brand);
+    cursor: pointer;
+}
+
+/* Hide the fee label (not relevant in this layout) */
+.autoconfig-card .autoconfig-payment-card .autoconfig-payment-card__fee {
+    display: none;
+}
+
+/* iDEAL always first in the list */
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_ideal"],
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_ideal"] {
+    order: -1;
+}
+
+/* ── Provider logos ──────────────────────────────────────── */
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_ideal"] .autoconfig-payment-card__icon,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_ideal"] .autoconfig-payment-card__icon {
+    background-color: transparent;
+    background-image: url("payment_icons/ideal.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe"] .autoconfig-payment-card__icon,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie"] .autoconfig-payment-card__icon {
+    background-color: transparent;
+    background-image: url("payment_icons/card.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_klarna"] .autoconfig-payment-card__icon,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_klarna"] .autoconfig-payment-card__icon,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_klarnapaylater"] .autoconfig-payment-card__icon,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_klarnasliceit"] .autoconfig-payment-card__icon {
+    background-color: transparent;
+    background-image: url("payment_icons/klarna.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+/* ── Payment form body ───────────────────────────────────── */
+/*
+ * Body show/hide is handled by Pretix's native accordion JS (main.js), which
+ * slideDown()s the panel-body when the radio is selected. This fires before
+ * Stripe's async load so the mount container is always visible when Stripe
+ * mounts — fixing the infinite spinner that occurs with display:none.
+ */
+.autoconfig-card .autoconfig-payment-card__body {
+    border-top: 1px solid var(--autoconfig-border);
+    padding: 16px;
+    background: var(--autoconfig-card-bg);
+    color: var(--autoconfig-card-text);
+}
+
+/* Redirect-only providers have no in-page form — always hidden */
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_ideal"] .autoconfig-payment-card__body,
+.autoconfig-card .autoconfig-payment-card[data-provider="mollie_ideal"] .autoconfig-payment-card__body,
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_bancontact"] .autoconfig-payment-card__body,
+.autoconfig-card .autoconfig-payment-card[data-provider="stripe_sofort"] .autoconfig-payment-card__body {
+    display: none !important;
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 540px) {
+    .autoconfig-card .autoconfig-payment-card {
+        border-radius: 10px;
+    }
+
+    .autoconfig-card .autoconfig-payment-card .autoconfig-payment-card__header {
+        padding: 10px 12px;
+    }
+
+    .autoconfig-card .autoconfig-payment-card .panel-title {
+        gap: 10px;
+        font-size: .95rem;
+    }
+
+    .autoconfig-card .autoconfig-payment-card__icon {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+    }
+}

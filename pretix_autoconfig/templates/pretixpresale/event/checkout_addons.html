@@ -1,0 +1,51 @@
+{% extends "pretixpresale/event/checkout_base.html" %}
+{% load i18n bootstrap3 rich_text l10n money thumb %}
+{% block inner %}
+    {% if forms %}
+        <div class="autoconfig-card">
+            <p>{% trans "For some of the products in your cart, you can choose additional options before you continue." %}</p>
+        </div>
+    {% elif incomplete %}
+        <div class="autoconfig-card">
+            <div class="alert alert-danger">
+                {% trans "A product in your cart is only sold in combination with add-on products that are not available. Please contact the event organizer." %}
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="post" data-asynctask
+          data-asynctask-headline="{% trans "We're now trying to book these add-ons for you!" %}">
+        {% csrf_token %}
+        {% for form in forms %}
+            <div class="autoconfig-card">
+                <p class="autoconfig-item-label">
+                    {% trans "Additional options for" %}
+                    <strong>{{ form.item.name }}{% if form.variation %} – {{ form.variation }}{% endif %}</strong>
+                </p>
+                {% if form.pos.seat %}
+                    <p>{{ form.pos.seat }}</p>
+                {% endif %}
+                {% if form.pos.subevent %}
+                    <p><span class="fa fa-calendar" aria-hidden="true"></span> {{ form.pos.subevent.name }} &middot; {{ form.pos.subevent.get_date_range_display_with_times_as_html }}</p>
+                {% endif %}
+                {% include "pretixpresale/event/fragment_addon_choice.html" with form=form %}
+            </div>
+        {% endfor %}
+
+        {% if cross_selling_data %}
+            <div class="autoconfig-card">
+                <p class="autoconfig-item-label"><strong>{% if forms %}{% trans "More recommendations" %}{% else %}{% trans "Our recommendations" %}{% endif %}</strong></p>
+                <div class="autoconfig-ticket-rows">
+                    {% include "pretixpresale/event/fragment_product_list.html" with items_by_category=cross_selling_data ev=event headline_level=4 %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="autoconfig-action-card">
+            <button class="autoconfig-pill-btn" type="submit">{% trans "Continue" %} ›</button>
+        </div>
+    </form>
+    {% if has_prev %}
+        <a class="autoconfig-back" href="{{ prev_url }}">← {% trans "Go back" %}</a>
+    {% endif %}
+{% endblock %}

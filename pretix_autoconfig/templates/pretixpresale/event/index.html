@@ -1,0 +1,212 @@
+{% extends "pretixpresale/event/base.html" %}
+{% load i18n l10n eventurl money eventsignal rich_text static autoconfig_fees %}
+{% block title %}{% if subevent %}{{ subevent.get_date_range_display }} :: {% endif %}{% endblock %}
+{% block custom_header %}
+    {{ block.super }}
+    <meta property="og:title" content="{{ ev.name }}" />
+{% endblock %}
+{% block content %}
+<div class="autoconfig-flow"
+     data-autoconfig-fee-percent="{% autoconfig_effective_fee_percent event %}"
+     data-autoconfig-fee-min="{% autoconfig_effective_fee_min event %}"
+     data-cart-add-url="{% eventurl request.event "presale:event.cart.add" cart_namespace=cart_namespace %}"
+     data-cart-clear-url="{% eventurl request.event "presale:event.cart.clear" cart_namespace=cart_namespace %}"
+     data-cart-remove-url="{% eventurl request.event "presale:event.cart.remove" cart_namespace=cart_namespace %}"
+     data-reservation-minutes="{{ event.settings.reservation_time|default:30 }}"
+     {% if autoconfig_link_cap %}data-cart-max-total="{{ autoconfig_link_cap }}"{% endif %}
+     {% comment %}
+         Cart state is fetched from autoconfig/cart.json, not rendered here. `cart.positions`
+         is grouped by Pretix (one entry per item/price with a `.count`), so rendering it as
+         one quantity per entry showed "1" for a cart of three — and the next "+" synced the
+         real cart down to that number. See spec 2026-09-20-private-link-voucher-lock.
+     {% endcomment %}
+     data-cart-state-url="{% url "plugins:pretix_autoconfig:cart.json" organizer=request.organizer.slug event=request.event.slug %}">
+
+    {% autoescape off %}<script type="application/ld+json">{{ ev.event_microdata }}</script>{% endautoescape %}
+
+    {# Event series — subevent list, unchanged #}
+    {% if request.event.has_subevents and not subevent %}
+        {% if frontpage_text %}<div class="autoconfig-card">{{ frontpage_text|rich_text }}</div>{% endif %}
+        {% include "pretixpresale/event/fragment_subevent_list.html" %}
+    {% endif %}
+
+    {% if subevent or not event.has_subevents %}
+
+        {% if not ev.presale_is_running %}
+            <div class="autoconfig-card autoconfig-product-list-card">
+                <div class="alert alert-info" style="margin-bottom:0">
+                    {% if ev.presale_has_ended %}
+                        {% if event.settings.presale_has_ended_text %}{{ event.settings.presale_has_ended_text|rich_text }}
+                        {% else %}{% blocktrans trimmed %}The booking period for this event is over.{% endblocktrans %}{% endif %}
+                    {% else %}
+                        {% blocktrans trimmed %}The booking period for this event has not yet started.{% endblocktrans %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if ev.presale_is_running or event.settings.show_items_outside_presale_period %}
+        {% referral_voucher_code as ref_voucher %}
+        {% referral_voucher_discount_pct as ref_pct %}
+        <form method="post" data-live-cart-form
+              action="{% eventurl request.event "presale:event.cart.add" cart_namespace=cart_namespace %}">
+            {% csrf_token %}
+            <input type="hidden" name="subevent" value="{{ subevent.id|default_if_none:"" }}" />
+            {% if ref_voucher %}
+                {% if ref_pct != "0" %}
+                <div class="autoconfig-card autoconfig-referral-banner" id="autoconfig-referral-banner">
+                    <span class="fa fa-tag" aria-hidden="true"></span>
+                    <span class="autoconfig-referral-banner__text">
+                        {% blocktrans trimmed with pct=ref_pct code=ref_voucher %}Referral code <strong>{{ code }}</strong> — {{ pct }}% discount will be applied to your order.{% endblocktrans %}
+                    </span>
+                    <input type="text" name="_voucher_code" id="autoconfig-referral-code-input"
+                           value="{{ ref_voucher }}" class="sr-only" aria-hidden="true">
+                    <button type="button" class="autoconfig-referral-banner__remove" aria-label="{% trans "Remove discount code" %}"
+                            onclick="document.getElementById('autoconfig-referral-code-input').value=''; document.getElementById('autoconfig-referral-banner').remove();">
+                        &times;
+                    </button>
+                </div>
+                {% else %}
+                {# No-discount voucher (e.g. sold-out bypass): apply voucher silently, no banner. #}
+                <input type="hidden" name="_voucher_code" id="autoconfig-referral-code-input"
+                       value="{{ ref_voucher }}">
+                {% endif %}
+            {% endif %}
+
+            {% if ev.seating_plan_id and event.settings.seating_choice %}
+                {% if event.has_subevents %}{% eventsignal event "pretix.presale.signals.render_seating_plan" request=request subevent=subevent %}
+                {% else %}{% eventsignal event "pretix.presale.signals.render_seating_plan" request=request %}{% endif %}
+            {% endif %}
+
+            {# Single card: event header + ticket list #}
+            <div class="autoconfig-card autoconfig-product-list-card">
+                <div class="autoconfig-event-meta">
+                    <div class="autoconfig-event-calendar" aria-hidden="true">
+                        <span class="autoconfig-event-calendar__month">{{ ev.date_from|date:"M" }}</span>
+                        <span class="autoconfig-event-calendar__day">{{ ev.date_from|date:"j" }}</span>
+                    </div>
+                    <div class="autoconfig-event-meta__content">
+                        <p class="autoconfig-event-meta__name">{{ event.name }}</p>
+                        <p class="autoconfig-event-meta__dates">
+                            {% if event.settings.show_times %}
+                                {{ ev.get_date_range_display_with_times_as_html }}
+                            {% else %}
+                                {{ ev.get_date_range_display }}
+                            {% endif %}
+                        </p>
+                        {% if event.location %}<p class="autoconfig-event-meta__location">{{ event.location }}</p>{% endif %}
+                    </div>
+                </div>
+                <hr class="autoconfig-divider">
+                {% if frontpage_text and not request.event.has_subevents %}
+                    <div class="autoconfig-frontpage-text">{{ frontpage_text|rich_text }}</div>
+                {% endif %}
+                {% if autoconfig_link_cap %}
+                    <p class="autoconfig-link-cap">
+                        {% blocktrans trimmed count counter=autoconfig_link_cap %}
+                            This link covers {{ counter }} ticket.
+                        {% plural %}
+                            This link covers up to {{ counter }} tickets.
+                        {% endblocktrans %}
+                    </p>
+                {% endif %}
+                <div class="autoconfig-ticket-rows">
+                    {% include "pretixpresale/event/fragment_product_list.html" %}
+                </div>
+                <p id="autoconfig-cart-error" class="autoconfig-cart-error" role="status" hidden></p>
+            </div>
+        </form>
+
+        {% if ev.presale_is_running and display_add_to_cart %}
+        {% if cart.positions %}
+        <div id="autoconfig-live-cart" class="autoconfig-card autoconfig-cart-summary-card">
+            <div class="autoconfig-cart-summary-main">
+                <div class="autoconfig-cart-summary-amount">
+                    <span class="autoconfig-cart-summary-label">{% trans "Total" %} (Incl. taxes)</span>
+                    <strong id="autoconfig-live-cart-total">{{ cart.total|money:request.event.currency }}</strong>
+                </div>
+                <a class="autoconfig-pill-btn"
+                   href="{% eventurl request.event "presale:event.checkout.start" cart_namespace=cart_namespace %}">
+                    {% trans "Proceed with checkout" %} ›
+                </a>
+            </div>
+            <div class="autoconfig-cart-summary-footer">
+                {# Visually hidden — the data source cart.js reads on init; kept meaningful for screen readers. #}
+                <span id="cart-deadline"
+                      class="sr-only"
+                      data-expires="{{ cart.first_expiry|date:"Y-m-d H:i:sO" }}"
+                      data-max-expiry-extend="{{ cart.max_expiry_extend|date:"Y-m-d H:i:sO" }}">
+                    {% if cart.minutes_left > 0 or cart.seconds_left > 0 %}
+                        {% blocktrans trimmed with minutes=cart.minutes_left %}The items in your cart are reserved for you for {{ minutes }} minutes.{% endblocktrans %}
+                    {% else %}
+                        {% trans "Cart expired." %}
+                    {% endif %}
+                </span>
+                {% comment %}
+                    Always emit #cart-deadline-short (empty when the server reservation has
+                    already lapsed) so Pretix's cart.js has something to write MM:SS — or its
+                    own "Cart expired" — into. A literal server-rendered "Cart expired." here
+                    would freeze on screen: cart.js can't update text that isn't in an element
+                    it targets, and live_cart.js re-syncs a lapsed cart from the server state. See spec 2026-09-08-private-link-countdown-stuck-expired.
+                {% endcomment %}
+                {% comment %}
+                    The prefix is its own element so it can be hidden when the slot holds
+                    anything other than a live MM:SS — otherwise cart.js writing its own
+                    "Cart expired" into #cart-deadline-short renders "Reserved for Cart
+                    expired". live_cart.js keeps it in sync.
+                {% endcomment %}
+                {% trans "Reserved for" as cart_deadline_prefix %}
+                <span id="cart-deadline-prefix"{% if not cart.minutes_left and not cart.seconds_left %} hidden{% endif %}>{{ cart_deadline_prefix }}</span> <strong id="cart-deadline-short" aria-hidden="true">{% if cart.minutes_left > 0 or cart.seconds_left > 0 %}{{ cart.minutes_left|stringformat:"02d" }}:{{ cart.seconds_left|stringformat:"02d" }}{% endif %}</strong>
+            </div>
+        </div>
+        {% else %}
+        <div id="autoconfig-live-cart" class="autoconfig-card autoconfig-cart-summary-card" style="display:none" aria-hidden="true">
+            <div class="autoconfig-cart-summary-main">
+                <div class="autoconfig-cart-summary-amount">
+                    <span class="autoconfig-cart-summary-label">{% trans "Total" %} (Incl. taxes)</span>
+                    <strong id="autoconfig-live-cart-total">—</strong>
+                </div>
+                <a class="autoconfig-pill-btn"
+                   href="{% eventurl request.event "presale:event.checkout.start" cart_namespace=cart_namespace %}">
+                    {% trans "Proceed with checkout" %} ›
+                </a>
+            </div>
+            <div class="autoconfig-cart-summary-footer">
+                {% comment %}
+                    No id="cart-deadline" here on purpose: with no data-expires, Pretix's own
+                    cart.js auto-init (which runs unconditionally on every page load if any
+                    #cart-deadline element exists) would read moment(undefined) = now and
+                    immediately stamp "Cart expired" into #cart-deadline-short below, before the
+                    buyer has added anything. Our own setCartDeadline() call (live_cart.js) drives
+                    this directly once a real deadline exists — it doesn't need this element.
+                {% endcomment %}
+                <span class="sr-only"></span>
+                {% trans "Reserved for" as cart_deadline_prefix %}
+                <span id="cart-deadline-prefix" hidden>{{ cart_deadline_prefix }}</span> <strong id="cart-deadline-short" aria-hidden="true"></strong>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+
+        {% endif %}
+
+    {% endif %}
+
+    {# Resend order link #}
+    {% if not cart_namespace %}
+        {% eventsignal event "pretix.presale.signals.front_page_bottom" subevent=subevent request=request %}
+        <div class="autoconfig-card autoconfig-resend-card">
+            <p>{% blocktrans trimmed %}Already have an order? Request your order link below.{% endblocktrans %}</p>
+            <a class="btn btn-default btn-sm" href="{% eventurl event "presale:event.resend_link" %}">{% trans "Resend link" %}</a>
+        </div>
+    {% else %}
+        {% eventsignal event "pretix.presale.signals.front_page_bottom_widget" subevent=subevent request=request %}
+    {% endif %}
+
+</div>
+<script src="{% static "pretix_autoconfig/index_price_fee.js" %}"></script>
+<script src="{% static "pretix_autoconfig/voucher_cleanup.js" %}"></script>
+<script src="{% static "pretix_autoconfig/referral_session.js" %}"></script>
+<script src="{% static "pretix_autoconfig/live_cart.js" %}?v=2026-09-23-serial"></script>
+{% endblock %}
